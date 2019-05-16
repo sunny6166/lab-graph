@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>BitCoin</title>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+</head>
+
+<body>
+
+  <div class="search">
+    <input type="date" id="start-date">
+    <input type="date" id="end-date">
+    <select id="currency">
+      <option value="EUR">EUR</option>
+      <option value="USD">USD</option>
+    </select>
+    <button type="submit" id="search-button">Search</button>
+  </div>
+
+  <div class="data-container">
+    <canvas id="myChart" width="400" height="400"></canvas>
+
+    <div id="information" style="display:none">
+      <h1>Information:</h1>
+      <p>Min value: <span id="minVal"></span> <span class="currency"></span></p>
+      <p>Max value: <span id="maxVal"></span> <span class="currency"></span></p>
+    </div>
+  </div>
+
+  <script>
+    $("#search-button").click(() => {
+      let startDate = $("#start-date").val();
+      let endDate = $("#end-date").val();
+      let currency = $("#currency").val();
+      queryBitcoinDataBase(startDate, endDate, currency);
+    });
+    function queryBitcoinDataBase(startDate, endDate, currency) {
+      axios.get(`https://api.coindesk.com/v1/bpi/historical/close.json?start=${startDate}&end=${endDate}&currency=${currency}`)
+        .then((response) => {
+          let dates = Object.keys(response.data.bpi);
+          let values = Object.values(response.data.bpi);
+          drawChart(dates, values, currency);
+        })
+        .catch((err) => {
+          console.log(err);
+        })
+    }
+    function drawChart(dates, values, currency) {
+      var ctx = document.getElementById('myChart').getContext('2d');
+      var myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: `BitCoin value in ${currency}`,
+            data: values,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(255, 206, 86, 0.2)',
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(153, 102, 255, 0.2)',
+                'rgba(255, 159, 64, 0.2)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero: true
+              }
+            }]
+          }
+        }
+      });
+      getMinMaxInfo(dates, values, currency);
+    }
+    function getMinMaxInfo(dates, values, currency) {
+      let minVal = Math.min(...values);
+      let maxVal = Math.max(...values);
+      $("#information")[0].setAttribute("style", "display:block");
+      $("#minVal").html(minVal);
+      $("#maxVal").html(maxVal);
+      $(".currency").html(currency);
+    }
+  </script>
+
+</body>
+
+</html>
